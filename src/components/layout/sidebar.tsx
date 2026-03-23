@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard,
   FileText,
@@ -40,6 +40,7 @@ const NAV_BOTTOM: NavItem[] = [
 
 export function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter();
   const [collapsed, setCollapsed] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
 
@@ -48,6 +49,11 @@ export function Sidebar() {
       pathname === item.href ||
       (item.href !== '/dashboard' && pathname.startsWith(item.href))
     );
+  }
+
+  function handleSignOut() {
+    setUserMenuOpen(false);
+    router.push('/login');
   }
 
   return (
@@ -218,13 +224,14 @@ export function Sidebar() {
                 'animate-scale-in',
               )}
             >
-              <button
+              <Link
+                href="/settings"
                 className="flex w-full items-center gap-2.5 px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors duration-150"
                 onClick={() => setUserMenuOpen(false)}
               >
                 <User className="h-3.5 w-3.5" />
                 Account settings
-              </button>
+              </Link>
               <button
                 className="flex w-full items-center gap-2.5 px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors duration-150"
                 onClick={() => setUserMenuOpen(false)}
@@ -235,7 +242,7 @@ export function Sidebar() {
               <div className="my-1 border-t border-border" />
               <button
                 className="flex w-full items-center gap-2.5 px-3 py-2 text-sm text-destructive hover:bg-destructive/10 transition-colors duration-150"
-                onClick={() => setUserMenuOpen(false)}
+                onClick={handleSignOut}
               >
                 <LogOut className="h-3.5 w-3.5" />
                 Sign out

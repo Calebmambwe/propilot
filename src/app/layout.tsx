@@ -9,6 +9,10 @@ export const metadata: Metadata = {
   title: 'ProPilot — AI Proposal Intelligence',
   description:
     'Draft, send, and win more proposals with AI-powered insights and section-level analytics.',
+  icons: {
+    icon: '/favicon.svg',
+    shortcut: '/favicon.svg',
+  },
   openGraph: {
     title: 'ProPilot — AI Proposal Intelligence',
     description: 'Win more proposals with AI coaching and prospect engagement analytics.',
