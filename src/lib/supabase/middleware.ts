@@ -7,6 +7,13 @@ export async function updateSession(request: NextRequest) {
     request,
   });
 
+  // Skip auth check if Supabase is not configured (dev mode without Supabase)
+  const supabaseUrl = process.env['NEXT_PUBLIC_SUPABASE_URL'];
+  const supabaseKey = process.env['NEXT_PUBLIC_SUPABASE_ANON_KEY'];
+  if (!supabaseUrl || !supabaseKey || (supabaseUrl === 'http://localhost:54321' && supabaseKey === 'placeholder-anon-key')) {
+    return supabaseResponse;
+  }
+
   const supabase = createServerClient(
     process.env['NEXT_PUBLIC_SUPABASE_URL']!,
     process.env['NEXT_PUBLIC_SUPABASE_ANON_KEY']!,

@@ -1,99 +1,22 @@
-import { Suspense } from 'react';
+'use client';
+
 import Link from 'next/link';
-import { createClient } from '@/lib/supabase/server';
 import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
-import { TemplateCard } from '@/components/templates/template-card';
 import { Separator } from '@/components/ui/separator';
+import { TemplateCard } from '@/components/templates/template-card';
+import { Plus } from 'lucide-react';
 
-async function TemplateList({ orgId }: { orgId: string }) {
-  const supabase = await createClient();
+const SYSTEM_TEMPLATES = [
+  { id: 't1', name: 'Consulting Proposal', description: 'Professional services engagement with scope, timeline, and deliverables', industry: 'Consulting', sectionCount: 6 },
+  { id: 't2', name: 'Dev Agency Proposal', description: 'Software development project with tech stack, milestones, and pricing tiers', industry: 'Technology', sectionCount: 8 },
+  { id: 't3', name: 'Marketing Campaign', description: 'Full marketing campaign proposal with strategy, channels, and ROI projections', industry: 'Marketing', sectionCount: 7 },
+];
 
-  const { data: templates } = await supabase
-    .from('templates')
-    .select('id, name, description, industry, is_system, created_at, template_sections(id)')
-    .or(`org_id.eq.${orgId},is_system.eq.true`)
-    .order('is_system', { ascending: false });
+const ORG_TEMPLATES = [
+  { id: 't4', name: 'Custom Retainer', description: 'Monthly retainer agreement with scope and billing terms', industry: null, sectionCount: 5 },
+];
 
-  const systemTemplates = (templates ?? []).filter((t) => t.is_system);
-  const orgTemplates = (templates ?? []).filter((t) => !t.is_system);
-
-  return (
-    <div className="space-y-8">
-      {orgTemplates.length > 0 && (
-        <div>
-          <h2 className="text-lg font-semibold mb-4">Your Templates</h2>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {orgTemplates.map((t) => (
-              <TemplateCard
-                key={t.id as string}
-                id={t.id as string}
-                name={t.name as string}
-                description={t.description as string | null}
-                industry={t.industry as string | null}
-                isSystem={false}
-                sectionCount={
-                  Array.isArray(t.template_sections)
-                    ? t.template_sections.length
-                    : 0
-                }
-                href={`/proposals/new?template=${t.id as string}`}
-              />
-            ))}
-          </div>
-        </div>
-      )}
-
-      <Separator />
-
-      <div>
-        <h2 className="text-lg font-semibold mb-4">ProPilot Templates</h2>
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {systemTemplates.map((t) => (
-            <TemplateCard
-              key={t.id as string}
-              id={t.id as string}
-              name={t.name as string}
-              description={t.description as string | null}
-              industry={t.industry as string | null}
-              isSystem={true}
-              sectionCount={
-                Array.isArray(t.template_sections)
-                  ? t.template_sections.length
-                  : 0
-              }
-              href={`/proposals/new?template=${t.id as string}`}
-            />
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function TemplateListSkeleton() {
-  return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-      {Array.from({ length: 6 }).map((_, i) => (
-        <Skeleton key={i} className="h-40 w-full rounded-lg" />
-      ))}
-    </div>
-  );
-}
-
-export default async function TemplatesPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  const { data: membership } = await supabase
-    .from('organization_members')
-    .select('org_id')
-    .eq('user_id', user!.id)
-    .limit(1)
-    .single();
-
+export default function TemplatesPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -104,19 +27,50 @@ export default async function TemplatesPage() {
           </p>
         </div>
         <Button asChild>
-          <Link href="/templates/new">New template</Link>
+          <Link href="/templates/new">
+            <Plus className="mr-2 h-4 w-4" />
+            New template
+          </Link>
         </Button>
       </div>
 
-      {membership ? (
-        <Suspense fallback={<TemplateListSkeleton />}>
-          <TemplateList orgId={membership.org_id as string} />
-        </Suspense>
-      ) : (
-        <p className="text-muted-foreground">
-          Set up your organization to manage templates.
-        </p>
-      )}
+      <div>
+        <h2 className="text-lg font-semibold mb-4">Your Templates</h2>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {ORG_TEMPLATES.map((t) => (
+            <TemplateCard
+              key={t.id}
+              id={t.id}
+              name={t.name}
+              description={t.description}
+              industry={t.industry}
+              isSystem={false}
+              sectionCount={t.sectionCount}
+              href={`/proposals/new?template=${t.id}`}
+            />
+          ))}
+        </div>
+      </div>
+
+      <Separator />
+
+      <div>
+        <h2 className="text-lg font-semibold mb-4">ProPilot Templates</h2>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {SYSTEM_TEMPLATES.map((t) => (
+            <TemplateCard
+              key={t.id}
+              id={t.id}
+              name={t.name}
+              description={t.description}
+              industry={t.industry}
+              isSystem={true}
+              sectionCount={t.sectionCount}
+              href={`/proposals/new?template=${t.id}`}
+            />
+          ))}
+        </div>
+      </div>
     </div>
   );
 }

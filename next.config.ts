@@ -9,7 +9,7 @@ const nextConfig: NextConfig = {
           {
             key: "Content-Security-Policy",
             value:
-              "default-src 'self'; script-src 'self' 'unsafe-inline'; img-src * data:; connect-src 'self' *.supabase.co",
+              "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src * data: blob:; connect-src 'self' *.supabase.co ws: wss:",
           },
           {
             key: "X-Content-Type-Options",

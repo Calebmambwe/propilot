@@ -1,163 +1,95 @@
-import { Suspense } from 'react';
-import Link from 'next/link';
-import { createClient } from '@/lib/supabase/server';
-import { Button } from '@/components/ui/button';
+'use client';
+
 import { Card, CardContent } from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
-import { ProposalCard } from '@/components/proposals/proposal-card';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import type { ProposalStatus } from '@/types/domain';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import Link from 'next/link';
+import { Plus, Search, Filter } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 
-type SearchParams = Promise<{ status?: string; page?: string }>;
+const DEMO_PROPOSALS = [
+  { id: '1', title: 'Website Redesign Proposal', client_name: 'Acme Corp', status: 'sent', deal_value: 12000, created_at: '2025-03-21' },
+  { id: '2', title: 'SEO Audit & Strategy', client_name: 'TechStart Inc', status: 'won', deal_value: 8500, created_at: '2025-03-19' },
+  { id: '3', title: 'Brand Identity Package', client_name: 'GreenLeaf Co', status: 'viewed', deal_value: 15000, created_at: '2025-03-17' },
+  { id: '4', title: 'Mobile App Development', client_name: 'FinServ Ltd', status: 'lost', deal_value: 45000, created_at: '2025-03-15' },
+  { id: '5', title: 'Marketing Automation Setup', client_name: 'CloudNine SaaS', status: 'draft', deal_value: 6000, created_at: '2025-03-14' },
+  { id: '6', title: 'E-commerce Platform Migration', client_name: 'RetailMax', status: 'sent', deal_value: 22000, created_at: '2025-03-12' },
+  { id: '7', title: 'Data Analytics Dashboard', client_name: 'DataViz Pro', status: 'won', deal_value: 18000, created_at: '2025-03-10' },
+];
 
-async function ProposalList({
-  orgId,
-  status,
-  page,
-}: {
-  orgId: string;
-  status?: string;
-  page: number;
-}) {
-  const supabase = await createClient();
-  const limit = 20;
-  const offset = (page - 1) * limit;
+const statusColors: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
+  won: 'default',
+  sent: 'secondary',
+  viewed: 'secondary',
+  lost: 'destructive',
+  draft: 'outline',
+};
 
-  let query = supabase
-    .from('proposals')
-    .select(
-      'id, slug, title, client_name, client_company, deal_value, status, outcome, sent_at, first_opened_at, created_at',
-      { count: 'exact' },
-    )
-    .eq('org_id', orgId)
-    .order('created_at', { ascending: false })
-    .range(offset, offset + limit - 1);
-
-  if (status && status !== 'all') {
-    query = query.eq('status', status);
-  }
-
-  const { data: proposals, count } = await query;
-
-  if (!proposals || proposals.length === 0) {
-    return (
-      <Card>
-        <CardContent className="py-12 text-center">
-          <p className="text-muted-foreground mb-4">No proposals found</p>
-          <Button asChild>
-            <Link href="/proposals/new">Create your first proposal</Link>
-          </Button>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  return (
-    <div className="space-y-4">
-      <div className="grid gap-4">
-        {proposals.map((p) => (
-          <ProposalCard
-            key={p.id as string}
-            id={p.id as string}
-            slug={p.slug as string}
-            title={p.title as string}
-            clientName={p.client_name as string}
-            clientCompany={p.client_company as string | null}
-            dealValue={p.deal_value as number | null}
-            status={p.status as ProposalStatus}
-            outcome={null}
-            sentAt={p.sent_at as string | null}
-            firstOpenedAt={p.first_opened_at as string | null}
-            createdAt={p.created_at as string}
-          />
-        ))}
-      </div>
-      {(count ?? 0) > limit && (
-        <p className="text-sm text-muted-foreground text-center">
-          Showing {Math.min(offset + limit, count ?? 0)} of {count} proposals
-        </p>
-      )}
-    </div>
-  );
+function formatCurrency(value: number) {
+  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(value);
 }
 
-function ProposalListSkeleton() {
-  return (
-    <div className="space-y-4">
-      {Array.from({ length: 5 }).map((_, i) => (
-        <Skeleton key={i} className="h-24 w-full rounded-lg" />
-      ))}
-    </div>
-  );
-}
-
-export default async function ProposalsPage({
-  searchParams,
-}: {
-  searchParams: SearchParams;
-}) {
-  const params = await searchParams;
-  const status = params.status ?? 'all';
-  const page = Number(params.page ?? 1);
-
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  const { data: membership } = await supabase
-    .from('organization_members')
-    .select('org_id')
-    .eq('user_id', user!.id)
-    .limit(1)
-    .single();
-
-  const statuses: Array<{ value: string; label: string }> = [
-    { value: 'all', label: 'All' },
-    { value: 'draft', label: 'Drafts' },
-    { value: 'sent', label: 'Sent' },
-    { value: 'opened', label: 'Opened' },
-    { value: 'won', label: 'Won' },
-    { value: 'lost', label: 'Lost' },
-  ];
-
+export default function ProposalsPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Proposals</h1>
-          <p className="text-muted-foreground">Manage and track your proposals</p>
+          <p className="text-muted-foreground">
+            Manage and track all your proposals
+          </p>
         </div>
         <Button asChild>
-          <Link href="/proposals/new">New proposal</Link>
+          <Link href="/proposals/new">
+            <Plus className="mr-2 h-4 w-4" />
+            New Proposal
+          </Link>
         </Button>
       </div>
 
-      <Tabs defaultValue={status}>
-        <TabsList>
-          {statuses.map((s) => (
-            <TabsTrigger key={s.value} value={s.value} asChild>
-              <Link href={`/proposals?status=${s.value}`}>{s.label}</Link>
-            </TabsTrigger>
-          ))}
-        </TabsList>
-      </Tabs>
+      <div className="flex items-center gap-3">
+        <div className="relative flex-1 max-w-sm">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input placeholder="Search proposals..." className="pl-9" />
+        </div>
+        <Button variant="outline" size="sm">
+          <Filter className="mr-2 h-4 w-4" />
+          Filter
+        </Button>
+      </div>
 
-      {membership ? (
-        <Suspense fallback={<ProposalListSkeleton />}>
-          <ProposalList
-            orgId={membership.org_id as string}
-            status={status === 'all' ? undefined : status}
-            page={page}
-          />
-        </Suspense>
-      ) : (
-        <Card>
-          <CardContent className="py-8 text-center text-muted-foreground">
-            Set up your organization to start creating proposals.
-          </CardContent>
-        </Card>
-      )}
+      <div className="space-y-3">
+        {DEMO_PROPOSALS.map((proposal) => (
+          <Card key={proposal.id} className="hover:shadow-md transition-shadow">
+            <CardContent className="flex items-center justify-between py-4">
+              <div className="flex-1">
+                <div className="flex items-center gap-3">
+                  <Link
+                    href={`/proposals/${proposal.id}/edit`}
+                    className="font-semibold hover:underline text-lg"
+                  >
+                    {proposal.title}
+                  </Link>
+                  <Badge variant={statusColors[proposal.status] ?? 'secondary'}>
+                    {proposal.status}
+                  </Badge>
+                </div>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {proposal.client_name} &middot; {formatCurrency(proposal.deal_value)} &middot; Created {proposal.created_at}
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button variant="ghost" size="sm" asChild>
+                  <Link href={`/proposals/${proposal.id}/edit`}>Edit</Link>
+                </Button>
+                {proposal.status === 'draft' && (
+                  <Button size="sm">Send</Button>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
     </div>
   );
 }

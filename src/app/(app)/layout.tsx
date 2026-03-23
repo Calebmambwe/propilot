@@ -8,13 +8,18 @@ export default async function AppLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // In dev without Supabase, skip auth check to allow UI preview
+  const isDevWithoutSupabase =
+    process.env['NEXT_PUBLIC_SUPABASE_ANON_KEY'] === 'placeholder-anon-key';
 
-  if (!user) {
-    redirect('/login');
+  let user = null;
+  if (!isDevWithoutSupabase) {
+    const supabase = await createClient();
+    const { data } = await supabase.auth.getUser();
+    user = data.user;
+    if (!user) {
+      redirect('/login');
+    }
   }
 
   return (
