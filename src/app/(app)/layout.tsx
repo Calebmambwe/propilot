@@ -25,9 +25,13 @@ export default async function AppLayout({
   return (
     <div className="flex h-screen overflow-hidden bg-background">
       <Sidebar />
-      <div className="flex flex-1 flex-col overflow-hidden">
+      <div className="flex flex-1 flex-col overflow-hidden min-w-0">
         <Header />
-        <main className="flex-1 overflow-y-auto p-6">{children}</main>
+        <main className="flex-1 overflow-y-auto">
+          <div className="p-4 sm:p-6 animate-fade-in">
+            {children}
+          </div>
+        </main>
       </div>
     </div>
   );
